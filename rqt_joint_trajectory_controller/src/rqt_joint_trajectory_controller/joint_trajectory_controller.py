@@ -306,11 +306,9 @@ class JointTrajectoryController(Plugin):
         cmd_topic = jtc_ns + '/command'
         self._state_sub = rospy.Subscriber(state_topic,
                                            JointTrajectoryControllerState,
-                                           self._state_cb,
-                                           queue_size=1)
+                                           self._state_cb)
         self._cmd_pub = rospy.Publisher(cmd_topic,
-                                        JointTrajectory,
-                                        queue_size=1)
+                                        JointTrajectory)
 
         # Start updating the joint positions
         self.jointStateChanged.connect(self._on_joint_state_change)
