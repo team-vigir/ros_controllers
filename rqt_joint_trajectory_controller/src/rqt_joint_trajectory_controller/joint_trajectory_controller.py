@@ -389,6 +389,8 @@ class JointTrajectoryController(Plugin):
             max_vel = self._robot_joint_limits[name]['max_velocity']
             dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
             point.positions.append(cmd)
+            point.velocity.append(0)
+            point.acceleration.append(0)
         point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
         traj.points.append(point)
 
