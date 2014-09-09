@@ -374,9 +374,16 @@ class JointTrajectoryController(Plugin):
     def _update_single_cmd_cb(self, val, name):
         self._joint_pos[name]['command'] = val
 
+        self.changed = True
+
     def _update_cmd_cb(self):
+
+        if (not(self.changed)):
+            return;
+
         dur = []
         traj = JointTrajectory()
+        traj.header.stamp = rospy.Time.now()
         traj.joint_names = self._joint_names
 
         # Append point slightly in the future at current position
@@ -410,10 +417,12 @@ class JointTrajectoryController(Plugin):
             point.positions.append(cmd)         # Go to target position
             point.velocities.append(0)          # Assume we end at rest
             point.accelerations.append(0)       # Assume we come to smooth stop
-        point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
+        point.time_from_start = rospy.Duration(0.25) + rospy.Duration(max(dur) / self._speed_scale)
         traj.points.append(point)
 
         self._cmd_pub.publish(traj)
+
+        self.changed = False
 
     def _update_joint_widgets(self):
         joint_widgets = self._joint_widgets()
