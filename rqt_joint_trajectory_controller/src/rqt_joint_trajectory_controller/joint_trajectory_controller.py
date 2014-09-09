@@ -378,6 +378,25 @@ class JointTrajectoryController(Plugin):
         dur = []
         traj = JointTrajectory()
         traj.joint_names = self._joint_names
+
+        # Append point slightly in the future at current position
+        point = JointTrajectoryPoint()
+        for name in traj.joint_names:
+            pos = self._joint_pos[name]['position']
+            cmd = pos
+            try:
+                cmd = self._joint_pos[name]['command']
+            except (KeyError):
+                pass
+            #max_vel = self._robot_joint_limits[name]['max_velocity']
+            #dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
+            point.positions.append(pos)                # Start at current position
+            point.velocities.append(0)                 # Assume we start at rest
+            point.accelerations.append(0)              # Assume we start without jerk
+        point.time_from_start = rospy.Duration( 0.25 ) # Delay start of this trajectory
+        traj.points.append(point)
+
+        # Append point slightly in the future at current position
         point = JointTrajectoryPoint()
         for name in traj.joint_names:
             pos = self._joint_pos[name]['position']
@@ -388,9 +407,9 @@ class JointTrajectoryController(Plugin):
                 pass
             max_vel = self._robot_joint_limits[name]['max_velocity']
             dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
-            point.positions.append(cmd)
-            point.velocities.append(0)
-            point.accelerations.append(0)
+            point.positions.append(cmd)         # Go to target position
+            point.velocities.append(0)          # Assume we end at rest
+            point.accelerations.append(0)       # Assume we come to smooth stop
         point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
         traj.points.append(point)
 
