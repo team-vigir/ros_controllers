@@ -105,4 +105,8 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES ros_control_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
+#install the executable.
+install(TARGETS rrbot
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 # TODO: Install test resource files as well?
