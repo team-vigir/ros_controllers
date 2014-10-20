@@ -399,7 +399,7 @@ update(const ros::Time& time, const ros::Duration& period)
   {
     // Non-realtime safe, but should never happen under normal operation
     ROS_ERROR_NAMED(name_,
-                    "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
+                    "Unexpected error: No trajectory defined at current time for %s. Please contact the package maintainer.",name_.c_str());
     return;
   }
 
@@ -454,13 +454,13 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
+    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller %s is not running.", name_.c_str());
     return false;
   }
 
   if (!msg)
   {
-    ROS_WARN_NAMED(name_, "Received null-pointer trajectory message, skipping.");
+    ROS_WARN_NAMED(name_, "Received null-pointer trajectory message, skipping %s .", name_.c_str());
     return false;
   }
 
@@ -477,7 +477,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   if (msg->points.empty())
   {
     setHoldPosition(time_data->uptime);
-    ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
+    ROS_DEBUG_NAMED(name_, "Empty trajectory command, holding %s .", name_.c_str());
     return true;
   }
 
@@ -531,7 +531,7 @@ goalCB(GoalHandle gh)
   // Precondition: Running controller
   if (!this->isRunning())
   {
-    ROS_ERROR_NAMED(name_, "Can't accept new action goals. Controller is not running.");
+    ROS_ERROR_NAMED(name_, "Can't accept new action goals. Controller %s is not running.", name_.c_str());
     control_msgs::FollowJointTrajectoryResult result;
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL; // TODO: Add better error status to msg?
     gh.setRejected(result);
@@ -544,7 +544,7 @@ goalCB(GoalHandle gh)
 
   if (permutation_vector.empty())
   {
-    ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
+    ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints for %s.", name_.c_str());
     control_msgs::FollowJointTrajectoryResult result;
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
     gh.setRejected(result);
@@ -595,8 +595,7 @@ cancelCB(GoalHandle gh)
 
     // Enter hold current position mode
     setHoldPosition(uptime);
-    ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib.");
-
+    ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib for %s.", name_.c_str());
     // Mark the current goal as canceled
     current_active_goal->gh_.setCanceled();
   }
@@ -610,7 +609,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR_NAMED(name_, "Can't sample trajectory. Controller is not running.");
+    ROS_ERROR_NAMED(name_, "Can't sample trajectory. Controller %s is not running.", name_.c_str());
     return false;
   }
 
