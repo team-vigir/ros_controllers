@@ -593,8 +593,12 @@ cancelCB(GoalHandle gh)
     // Controller uptime
     const ros::Time uptime = time_data_.readFromRT()->uptime;
 
-    // Enter hold current position mode
-    setHoldPosition(uptime);
+    // Retain current command for bumpless stitching
+    if (0 == gh.getGoal()->trajectory.points.size()) // if new trajectory keep current command, otherwise hold current
+    {
+        // Enter hold current position mode
+        setHoldPosition(uptime);
+    }
     ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib for %s.", name_.c_str());
     // Mark the current goal as canceled
     current_active_goal->gh_.setCanceled();
