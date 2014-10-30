@@ -27,7 +27,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Adolfo Rodriguez Tsouroukdissian, Stuart Glaser, Mrinal Kalakrishnan, David Conner
+/// \author David Conner
+/// based on quintic_spline_segment.h by Adolfo Rodriguez Tsouroukdissian, Stuart Glaser, Mrinal Kalakrishnan
+///
 
 #ifndef TRAJECTORY_INTERFACE_LINEAR_SPLINE_SEGMENT_H
 #define TRAJECTORY_INTERFACE_LINEAR_SPLINE_SEGMENT_H
@@ -217,16 +219,6 @@ void LinearSplineSegment<ScalarType>::init(const Time&  start_time,
 }
 
 template<class ScalarType>
-inline void LinearSplineSegment<ScalarType>::generatePowers(int n, const Scalar& x, Scalar* powers)
-{
-  powers[0] = 1.0;
-  for (int i=1; i<=n; ++i)
-  {
-    powers[i] = powers[i-1]*x;
-  }
-}
-
-template<class ScalarType>
 void LinearSplineSegment<ScalarType>::
 computeCoefficients(const Scalar& start_pos,
                     const Scalar& end_pos,
@@ -242,15 +234,10 @@ void LinearSplineSegment<ScalarType>::
 sample(const SplineCoefficients& coefficients, const Scalar& time,
        Scalar& position, Scalar& velocity, Scalar& acceleration)
 {
-  // create powers of time:
-  Scalar t[6];
-  generatePowers(5, time, t);
 
-  position = t[0]*coefficients[0] +
-             t[1]*coefficients[1] ;
+  position = coefficients[0] + time*coefficients[1] ;
 
-  velocity = t[0]*coefficients[1] +
-         2.0*t[1]*coefficients[2];
+  velocity = coefficients[1] ;
 
   acceleration = 0.0;
 }
