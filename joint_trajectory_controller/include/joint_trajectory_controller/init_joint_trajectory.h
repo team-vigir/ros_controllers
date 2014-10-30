@@ -223,8 +223,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     ros::Duration msg_start_duration = msg_start_time - time;
     o_time = *options.other_time_base;
     o_msg_start_time = o_time + msg_start_duration;
-    ROS_DEBUG_STREAM("Using alternate time base. In it, the new trajectory starts at time "
-                     << std::fixed << std::setprecision(3) << o_msg_start_time.toSec());
+    ROS_WARN_STREAM("Using alternate time base. In it, the new trajectory starts at time "
+                     << std::fixed << std::setprecision(3) << o_msg_start_time.toSec() << " instead of " << msg_start_time.toSec());
   }
   else
   {
@@ -261,6 +261,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   if (it == msg.points.end())
   {
     it = msg.points.begin();  // Entire trajectory is after current time
+    ROS_WARN(" Entire trajectory (starting at %f+%f) is after current time=%f (ros %f)",
+             msg_start_time.toSec(),it->time_from_start.toSec(), time.toSec(),msg.header.stamp.toSec());
   }
   else
   {
@@ -343,11 +345,13 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     bridge_seg.setGoalHandle(options.rt_goal_handle);
     if (has_rt_goal_handle) {bridge_seg.setTolerances(tolerances);}
     result_traj.push_back(bridge_seg);
+    ROS_WARN("Push back bridge segement from %f to %f",last_curr_time, first_new_time);
   }
 
   // Constants used in log statement at the end
   const unsigned int num_old_segments = result_traj.size() -1;
   const unsigned int num_new_segments = std::distance(it, msg.points.end()) -1;
+  ROS_WARN("Update trajectory with %d old segments and %d new segments starting at %f+%f",num_old_segments, num_new_segments, o_msg_start_time.toSec(),it->time_from_start.toSec());
 
   // Add useful segments of new trajectory to result
   // - Construct all trajectory segments occurring after current time
@@ -374,7 +378,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                                " points) taken from the input trajectory.";}
   }
   else {log_str << ".";}
-  ROS_DEBUG_STREAM(log_str.str());
+  ROS_WARN_STREAM(log_str.str());
 
   return result_traj;
 }
