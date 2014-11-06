@@ -46,87 +46,14 @@ inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclo
   return p;
 }
 
-std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string& param_name)
-{
-  using namespace XmlRpc;
-  XmlRpcValue xml_array;
-  if (!nh.getParam(param_name, xml_array))
-  {
-    ROS_ERROR_STREAM("Could not find '" << param_name << "' parameter (namespace: " << nh.getNamespace() << ").");
-    return std::vector<std::string>();
-  }
-  if (xml_array.getType() != XmlRpcValue::TypeArray)
-  {
-    ROS_ERROR_STREAM("The '" << param_name << "' parameter is not an array (namespace: " <<
-                     nh.getNamespace() << ").");
-    return std::vector<std::string>();
-  }
+std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string& param_name);
 
-  std::vector<std::string> out;
-  for (int i = 0; i < xml_array.size(); ++i)
-  {
-    if (xml_array[i].getType() != XmlRpcValue::TypeString)
-    {
-      ROS_ERROR_STREAM("The '" << param_name << "' parameter contains a non-string element (namespace: " <<
-                       nh.getNamespace() << ").");
-      return std::vector<std::string>();
-    }
-    out.push_back(static_cast<std::string>(xml_array[i]));
-  }
-  return out;
-}
-
-boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::string& param_name)
-{
-  boost::shared_ptr<urdf::Model> urdf(new urdf::Model);
-
-  std::string urdf_str;
-  // Check for robot_description in proper namespace
-  if (nh.getParam(param_name, urdf_str))
-  {
-    if (!urdf->initString(urdf_str))
-    {
-      ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter (namespace: " <<
-        nh.getNamespace() << ").");
-      return boost::shared_ptr<urdf::Model>();
-    }
-  }
-  // Check for robot_description in root
-  else if (!urdf->initParam("robot_description"))
-  {
-    ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter");
-    return boost::shared_ptr<urdf::Model>();
-  }
-  return urdf;
-}
+boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::string& param_name);
 
 typedef boost::shared_ptr<const urdf::Joint> UrdfJointConstPtr;
-std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names)
-{
-  std::vector<UrdfJointConstPtr> out;
-  for (unsigned int i = 0; i < joint_names.size(); ++i)
-  {
-    UrdfJointConstPtr urdf_joint = urdf.getJoint(joint_names[i]);
-    if (urdf_joint)
-    {
-      out.push_back(urdf_joint);
-    }
-    else
-    {
-      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in URDF model.");
-      return std::vector<UrdfJointConstPtr>();
-    }
-  }
-  return out;
-}
+std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names);
 
-std::string getLeafNamespace(const ros::NodeHandle& nh)
-{
-  const std::string complete_ns = nh.getNamespace();
-  std::size_t id   = complete_ns.find_last_of("/");
-  return complete_ns.substr(id + 1);
-}
-
+std::string getLeafNamespace(const ros::NodeHandle& nh);
 } // namespace
 
 template <class SegmentImpl, class HardwareInterface>
