@@ -7,6 +7,7 @@ project(vigir_grasp_trajectory_controller)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   angles
+  cmake_modules
   control_msgs
   control_toolbox
   controller_interface
@@ -91,9 +92,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES vigir_grasp_trajectory_controller
-#  CATKIN_DEPENDS actionlib angles control_msgs control_toolbox controller_interface controller_manager hardware_interface realtime_tools roscpp rospy std_msgs trajectory_msgs urdf xacro
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS actionlib angles control_msgs control_toolbox controller_interface controller_manager hardware_interface realtime_tools roscpp rospy std_msgs trajectory_msgs urdf xacro
 #  DEPENDS system_lib
 )
 
@@ -105,13 +106,26 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
+  ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(vigir_grasp_trajectory_controller
-#   src/${PROJECT_NAME}/vigir_grasp_trajectory_controller.cpp
-# )
+add_library(${PROJECT_NAME}
+    src/vigir_grasp_trajectory_controller.cpp
+    include/${PROJECT_NAME}/hardware_interface_adapter.h
+    include/${PROJECT_NAME}/init_joint_trajectory.h
+    include/${PROJECT_NAME}/vigir_grasp_trajectory_controller.h
+    include/${PROJECT_NAME}/vigir_grasp_trajectory_controller_impl.h
+    include/${PROJECT_NAME}/joint_trajectory_msg_utils.h
+    include/${PROJECT_NAME}/joint_trajectory_segment.h
+    include/${PROJECT_NAME}/tolerances.h
+#    include/trajectory_interface/trajectory_interface.h
+#    include/trajectory_interface/quintic_spline_segment.h
+#    include/trajectory_interface/linear_spline_segment.h
+#    include/trajectory_interface/pos_vel_acc_state.h
+)
 
 ## Declare a cpp executable
 # add_executable(vigir_grasp_trajectory_controller_node src/vigir_grasp_trajectory_controller_node.cpp)
@@ -121,13 +135,34 @@ include_directories(
 # add_dependencies(vigir_grasp_trajectory_controller_node vigir_grasp_trajectory_controller_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(vigir_grasp_trajectory_controller_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
 #############
+
+# Install
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+#install(DIRECTORY include/trajectory_interface/
+#  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/trajectory_interface/)
+
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
+install(FILES ros_control_plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+#install the executable.
+#install(TARGETS rrbot
+#    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
