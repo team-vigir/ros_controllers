@@ -135,7 +135,7 @@ checkGoalTolerances(const typename Segment::State& state_error,
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
 
-  if (inside_goal_tolerances)
+  if (inside_goal_tolerances || false) //EVALUATE TACTILE QUALITY INFORMATION (replace "false" with evaluation output)
   {
     rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);

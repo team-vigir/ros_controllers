@@ -110,7 +110,7 @@ inline bool checkStateTolerance(const State&                                    
   {
     using std::abs;
     const StateTolerances<typename State::Scalar>& tol = state_tolerance[i]; // Alias for brevity
-    const bool is_valid = !(tol.position     > 0.0 && abs(state_error.position[i])     > tol.position) &&
+    const bool is_valid = !(tol.position     > 0.0 && state_error.position[i]          < -tol.position) &&
                           !(tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity) &&
                           !(tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration);
 
