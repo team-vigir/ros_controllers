@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   urdf
   xacro
+  joint_trajectory_controller
 )
 
 ## System dependencies are found with CMake's conventions
