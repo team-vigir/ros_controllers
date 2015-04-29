@@ -140,7 +140,7 @@ public:
   unsigned int size() const {return coefs_.size();}
 
 private:
-  typedef boost::array<Scalar, 2> SplineCoefficients;
+  typedef boost::array<Scalar, 6> SplineCoefficients;
 
   /** Coefficients represent a linear segment:
    *
@@ -197,6 +197,25 @@ void LinearSplineSegment<ScalarType>::init(const Time&  start_time,
   }
 
   const unsigned int dim = start_state.position.size();
+  const bool has_velocity     = !start_state.velocity.empty()     && !end_state.velocity.empty();
+  const bool has_acceleration = !start_state.acceleration.empty() && !end_state.acceleration.empty();
+
+  if (has_velocity && dim != start_state.velocity.size())
+  {
+    throw(std::invalid_argument("Quintic spline segment can't be constructed: Start state velocity size mismatch."));
+  }
+  if (has_velocity && dim != end_state.velocity.size())
+  {
+    throw(std::invalid_argument("Quintic spline segment can't be constructed: End state velocity size mismatch."));
+  }
+  if (has_acceleration && dim!= start_state.acceleration.size())
+  {
+    throw(std::invalid_argument("Quintic spline segment can't be constructed: Start state acceleration size mismatch."));
+  }
+  if (has_acceleration && dim != end_state.acceleration.size())
+  {
+    throw(std::invalid_argument("Quintic spline segment can't be constructed: End state acceleratios size mismatch."));
+  }
 
   // Time data
   start_time_ = start_time;
@@ -206,15 +225,44 @@ void LinearSplineSegment<ScalarType>::init(const Time&  start_time,
   coefs_.resize(dim);
 
   typedef typename std::vector<SplineCoefficients>::iterator Iterator;
-  // Linear interpolation
-  for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+  if (!has_velocity)
   {
-    const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
+    // Linear interpolation between positions
+    for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+    {
+      const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
 
-    computeCoefficients(start_state.position[id],
-                        end_state.position[id],
-                        duration_,
-                        *coefs_it);
+      computeCoefficients(start_state.position[id],
+                          end_state.position[id],
+                          duration_,
+                          *coefs_it);
+    }
+  }
+  else if (!has_acceleration)
+  {
+    // Linear interpolation between position and velocity
+    for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+    {
+      const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
+
+      computeCoefficients(start_state.position[id], start_state.velocity[id],
+                          end_state.position[id],   end_state.velocity[id],
+                          duration_,
+                          *coefs_it);
+    }
+  }
+  else
+  {
+    // Linear interpolation of position, velocity, and acceleration values
+    for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+    {
+      const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
+
+      computeCoefficients(start_state.position[id], start_state.velocity[id], start_state.acceleration[id],
+                          end_state.position[id],   end_state.velocity[id],   end_state.acceleration[id],
+                          duration_,
+                          *coefs_it);
+    }
   }
 }
 
@@ -227,6 +275,64 @@ computeCoefficients(const Scalar& start_pos,
 {
   coefficients[0] = start_pos;
   coefficients[1] = (time == 0.0) ? 0.0 : (end_pos - start_pos) / time;
+  coefficients[2] = coefficients[1];
+  coefficients[3] = 0.0;
+  coefficients[4] = 0.0;
+  coefficients[5] = 0.0;
+
+}
+
+
+template<class ScalarType>
+void LinearSplineSegment<ScalarType>::
+computeCoefficients(const Scalar& start_pos, const Scalar& start_vel,
+                    const Scalar& end_pos,   const Scalar& end_vel,
+                    const Scalar& time,
+                    SplineCoefficients& coefficients)
+{
+  if (time == 0.0)
+  {
+    coefficients[0] = start_pos;
+    coefficients[1] = start_vel;
+    coefficients[2] = start_vel;
+    coefficients[3] = 0.0;
+  }
+  else
+  {
+      coefficients[0] = start_pos;
+      coefficients[1] = (end_pos - start_pos) / time;
+      coefficients[2] = start_vel;
+      coefficients[3] = (end_vel - start_vel) / time;
+  }
+  coefficients[4] = 0.0;
+  coefficients[5] = 0.0;
+}
+
+template<class ScalarType>
+void LinearSplineSegment<ScalarType>::
+computeCoefficients(const Scalar& start_pos, const Scalar& start_vel, const Scalar& start_acc,
+                    const Scalar& end_pos,   const Scalar& end_vel,   const Scalar& end_acc,
+                    const Scalar& time,
+                    SplineCoefficients& coefficients)
+{
+  if (time == 0.0)
+  {
+    coefficients[0] = start_pos;
+    coefficients[1] = start_vel;
+    coefficients[2] = start_vel;
+    coefficients[3] = 0.5*start_acc;
+    coefficients[4] = start_acc;
+    coefficients[5] = 0.0;
+  }
+  else
+  {
+      coefficients[0] = start_pos;
+      coefficients[1] = (end_pos - start_pos) / time;
+      coefficients[2] = start_vel;
+      coefficients[3] = (end_vel - start_vel) / time;
+      coefficients[4] = start_acc;
+      coefficients[5] = (end_acc - start_acc) / time;
+  }
 }
 
 template<class ScalarType>
@@ -235,11 +341,11 @@ sample(const SplineCoefficients& coefficients, const Scalar& time,
        Scalar& position, Scalar& velocity, Scalar& acceleration)
 {
 
-  position = coefficients[0] + time*coefficients[1] ;
+  position     = coefficients[0] + time*coefficients[1] ;
 
-  velocity = coefficients[1] ;
+  velocity     = coefficients[2] + time*coefficients[3] ;
 
-  acceleration = 0.0;
+  acceleration = coefficients[4] + time*coefficients[5] ;
 }
 
 template<class ScalarType>
